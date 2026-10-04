@@ -1,0 +1,28 @@
+SKIP THIS
+
+pip freeze > requirements.txt
+
+means:
+
+pip freeze lists all Python packages installed in your active virtual environment.
+> redirects that list into a file.
+requirements.txt stores the package names and versions.
+
+Example:
+
+Flask==3.1.2
+opencv-python==4.12.0
+ultralytics==8.3.0
+
+Later, you or your teammates can install the same packages with:
+
+pip install -r requirements.txt
+
+Use the command without the backslash:
+
+pip freeze > requirements.txt
+
+(api-key) run this -> $env:ROBOFLOW_API_KEY="cbSlifWhWQUgUFkrCY89"  
+
+
+ACTIVE venv3.14=> .\.venv3.14\Scripts\Activate.ps1 
