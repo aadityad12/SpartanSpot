@@ -1,3 +1,5 @@
+import { colors } from './theme';
+
 export type ParkingLot = {
   id: string;
   name: string;
@@ -65,8 +67,8 @@ export async function fetchParkingFeed(baseUrl: string): Promise<ParkingFeed> {
 }
 
 export function availability(lot: ParkingLot, stale = false) {
-  if (stale || !lot.total || lot.unknown === lot.total) return { label: 'No current data', color: '#7B8780' };
-  if (lot.available === 0) return { label: lot.unknown ? 'Availability unknown' : 'Full', color: '#B85D4E' };
-  if (lot.available / lot.total < 0.12) return { label: 'Filling up', color: '#AF7625' };
-  return { label: 'Spots available', color: '#245C45' };
+  if (stale || !lot.total || lot.unknown === lot.total) return { label: 'No current data', color: colors.muted };
+  if (lot.available === 0) return { label: lot.unknown ? 'Availability unknown' : 'Full', color: colors.occupied };
+  if (lot.available / lot.total < 0.12) return { label: 'Filling up', color: colors.amber };
+  return { label: 'Spots available', color: colors.available };
 }
