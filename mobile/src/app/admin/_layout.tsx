@@ -33,7 +33,7 @@ export default function AdminLayout() {
           paddingTop: 11,
           paddingBottom: bottom,
         },
-        tabBarLabelStyle: { fontSize: 10, fontWeight: '600', marginTop: 5 },
+        tabBarLabelStyle: { fontSize: 9, fontWeight: '600', marginTop: 5 },
         sceneStyle: { backgroundColor: colors.background },
       }}
     >

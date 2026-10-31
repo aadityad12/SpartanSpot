@@ -12,7 +12,8 @@ const tabs: { name: string; title: string; icon: IconName }[] = [
   { name: 'account', title: 'Account', icon: 'user' },
 ];
 
-// Still routable, but not part of the five-tab bar.
+// Still routable, but not part of the five-tab bar. `href: null` makes a tab unreachable in
+// SDK 58 (it becomes `hidden` and redirects), so render no tab button instead.
 const hiddenTabs = ['saved', 'activity', 'settings'];
 
 export default function TabLayout() {
@@ -35,7 +36,7 @@ export default function TabLayout() {
           paddingTop: 11,
           paddingBottom: bottom,
         },
-        tabBarLabelStyle: { fontSize: 10, fontWeight: '600', marginTop: 5 },
+        tabBarLabelStyle: { fontSize: 9, fontWeight: '600', marginTop: 5 },
         sceneStyle: { backgroundColor: colors.background },
       }}
     >
@@ -50,7 +51,7 @@ export default function TabLayout() {
         />
       ))}
       {hiddenTabs.map(name => (
-        <Tabs.Screen key={name} name={name} options={{ href: null }} />
+        <Tabs.Screen key={name} name={name} options={{ tabBarButton: () => null }} />
       ))}
     </Tabs>
   );
