@@ -19,3 +19,10 @@ results/
 runs/
 
 .env
+# Local-only reference material and assistant tooling (never commit)
+*.pdf
+*.pptx
+Cmpe131_group*/
+.claude/
+CLAUDE.md
+AGENTS.md

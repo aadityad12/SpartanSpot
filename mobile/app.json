@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Spartan Spot",
+    "slug": "spartan-spot",
+    "scheme": "spartanspot",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.spartanspot.mobile",
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "Connect to your parking detection server on your local network.",
+        "NSAppTransportSecurity": { "NSAllowsLocalNetworking": true }
+      }
+    },
+    "android": {
+      "package": "com.spartanspot.mobile",
+      "predictiveBackGestureEnabled": false
+    },
+    "web": { "bundler": "metro" },
+    "experiments": { "typedRoutes": true },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-splash-screen"
+    ]
+  }
+}
