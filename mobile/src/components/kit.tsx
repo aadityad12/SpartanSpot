@@ -658,28 +658,6 @@ export function Banner({
   );
 }
 
-export function Placeholder({
-  title,
-  issue,
-  description,
-}: {
-  title: string;
-  issue: number | string;
-  description: string;
-}) {
-  const issueLabel = typeof issue === 'number' ? `#${issue}` : issue;
-  return (
-    <Card style={styles.placeholder}>
-      <View style={styles.placeholderIcon}>
-        <Icon name="tool" size={26} color={colors.primary} />
-      </View>
-      <Text style={styles.placeholderTitle}>{title}</Text>
-      <Badge label={`Coming soon: built in issue ${issueLabel}`} tone="warning" icon="clock" />
-      <Text style={styles.placeholderText}>{description}</Text>
-    </Card>
-  );
-}
-
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   pressed: { opacity: 0.7 },
@@ -853,16 +831,4 @@ const styles = StyleSheet.create({
   banner: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, padding: 12, borderRadius: 14, borderWidth: 1 },
   bannerTitle: { fontSize: 14, fontWeight: '700' },
   bannerMessage: { fontSize: 13, lineHeight: 19, color: colors.ink, marginTop: 2 },
-
-  placeholder: { alignItems: 'center', gap: 12, paddingVertical: 36, paddingHorizontal: 24 },
-  placeholderIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 20,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  placeholderTitle: { fontSize: 20, fontWeight: '700', color: colors.ink, textAlign: 'center' },
-  placeholderText: { fontSize: 14, lineHeight: 21, color: colors.muted, textAlign: 'center', maxWidth: 420 },
 });
