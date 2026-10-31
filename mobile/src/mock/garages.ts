@@ -81,8 +81,8 @@ const configs: GarageConfig[] = [
     permits: ['Student', 'Visitor'],
     amenities: ['Covered', 'EV charging', 'Accessible'],
     cameraMonitored: true,
-    mapX: 73,
-    mapY: 74,
+    mapX: 62,
+    mapY: 72,
     occupancy: 0.68,
   },
   {

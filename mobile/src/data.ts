@@ -29,7 +29,7 @@ const demoLots: ParkingLot[] = garages.map(garage => {
   return {
     id: garage.id,
     name: garage.name,
-    subtitle: `${garage.shortName.replace(/ Campus$/, '')} campus · ${garage.levels === 1 ? 'Surface lot' : `${garage.levels} levels`}`,
+    subtitle: `${garage.levels === 1 ? 'Surface lot' : `${garage.levels} levels`} · ${garage.address}`,
     available: summary.available,
     total: summary.total,
     unknown: 0,
