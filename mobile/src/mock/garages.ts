@@ -152,15 +152,20 @@ function buildLevel(config: GarageConfig, level: number): Spot[] {
         row,
         number,
         label: `${level}-${row}${number.toString().padStart(2, '0')}`,
-        status: seeded(`occupied:${id}`) < config.occupancy ? 'occupied' : 'available',
+        status: 'available',
         features: featuresFor(config, row, number),
       });
     }
   }
-  // Reserve the two free spots with the lowest hash so every level has exactly two.
+  // Rank spots by hash and take the first slice, so each level lands on the target occupancy
+  // exactly while the pattern still looks random. Two of the remaining spots are reserved.
+  const byRank = (prefix: string) => (first: Spot, second: Spot) =>
+    seeded(`${prefix}:${first.id}`) - seeded(`${prefix}:${second.id}`);
+  const occupiedCount = Math.round(spots.length * config.occupancy);
+  [...spots].sort(byRank('occupied')).slice(0, occupiedCount).forEach(spot => { spot.status = 'occupied'; });
   spots
     .filter(spot => spot.status === 'available')
-    .sort((first, second) => seeded(`reserved:${first.id}`) - seeded(`reserved:${second.id}`))
+    .sort(byRank('reserved'))
     .slice(0, 2)
     .forEach(spot => { spot.status = 'reserved'; });
   return spots;
