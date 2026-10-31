@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { ProfileCard } from '../../components/permits/ProfileCard';
 import { Card, ListRow, PageHeader, Screen, SectionHeader } from '../../components/kit';
@@ -15,7 +16,7 @@ const notificationRows = [
 
 type NotificationKey = (typeof notificationRows)[number]['key'];
 
-function Group({ children }: { children: React.ReactNode }) {
+function Group({ children }: { children: ReactNode }) {
   return <Card style={styles.group}>{children}</Card>;
 }
 

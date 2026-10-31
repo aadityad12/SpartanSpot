@@ -82,7 +82,7 @@ export function VehicleList({
         />
       ))}
       {!removable && vehicles.length === 1 ? (
-        <Text style={styles.note}>Your last vehicle can't be removed. Add another one first.</Text>
+        <Text style={styles.note}>Your last vehicle cannot be removed. Add another one first.</Text>
       ) : null}
       {vehicles.length === 0 ? <Text style={styles.note}>No vehicles on file yet.</Text> : null}
     </Card>

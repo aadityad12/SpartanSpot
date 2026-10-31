@@ -22,7 +22,9 @@ function TotalRow({ label, value, strong = false }: { label: string; value: stri
 
 export function CheckoutForm({ plan, onPaid }: { plan: Plan; onPaid: (permit: Permit) => void }) {
   const { vehicles, purchasePlan } = useDemo();
-  const terms = termOptions(plan.id, Date.now());
+  // Fixed at mount so the date chips don't shift while the student is choosing.
+  const [openedAt] = useState(() => Date.now());
+  const terms = termOptions(plan.id, openedAt);
   const [term, setTerm] = useState(terms[0].value);
   const [methodId, setMethodId] = useState(paymentMethods[0].id);
   // Start with the primary vehicle ticked so the common case is one tap to pay.
