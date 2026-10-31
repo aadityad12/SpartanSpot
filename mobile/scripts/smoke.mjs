@@ -2,7 +2,7 @@
 // output folder and loads each route in headless Chrome, failing if a route
 // renders without the expected text (usually a crash or a blank screen).
 //
-// Usage: npm run export:web && npm run smoke -- "<route>=<expected text>" ...
+// Usage: npm run export:web && npm run smoke -- "<route> => <expected text>" ...
 // The export folder defaults to dist/; pass a folder as the first argument to override.
 import { execFile } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
@@ -11,10 +11,10 @@ import { extname, join, normalize } from 'node:path';
 
 const chrome = process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const args = process.argv.slice(2);
-const dir = args[0] && !args[0].includes('=') ? args.shift() : 'dist';
+const dir = args[0] && !args[0].includes(' => ') ? args.shift() : 'dist';
 const checks = args;
 if (checks.length === 0) {
-  console.error('Usage: npm run smoke -- [exportDir] "<route>=<expected text>" ...');
+  console.error('Usage: npm run smoke -- [exportDir] "<route> => <expected text>" ...');
   process.exit(2);
 }
 
@@ -38,9 +38,7 @@ const dump = url => new Promise(resolve => execFile(chrome,
 
 let failed = 0;
 for (const check of checks) {
-  const split = check.indexOf('=');
-  const route = check.slice(0, split);
-  const expected = check.slice(split + 1);
+  const [route, expected = ''] = check.split(' => ');
   const html = await dump(`http://localhost:${port}${route}`);
   const text = html.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '').replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&#x27;|&#39;/g, "'").replace(/\s+/g, ' ');
   const ok = text.includes(expected);
