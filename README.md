@@ -34,10 +34,10 @@ Demo state lives in memory, so reloading the page returns to sign-in and resets 
 
 1. **Sign in as a student.** On the sign-in screen choose **Student**.
 2. **See green and red spaces and the available count.** The Find tab shows the total open-spot count and the four garages (North, South, West, and South Campus Lot) on a map. Tap a pin or a garage card to open its details. Use the level chips to see that level's live map: green is available, red is occupied, gold is reserved.
-3. **Reserve a spot.** In the garage details tap **Reserve a spot here**, or use **New** on the Reservations tab. Pick a green spot, choose a start time and length (book it for today so it shows up in the admin list), then pick a vehicle and payment method and confirm. Tapping a red or gold spot shows why it cannot be reserved.
+3. **Reserve a spot.** In the garage details tap **Reserve a spot here**, or use **New** on the Reservations tab. Pick a green spot, choose a start time and length, then pick a vehicle and payment method and confirm. Tapping a red or gold spot shows why it cannot be reserved.
 4. **See the code.** The confirmation shows a reservation code and QR code, and the reservation appears under the Reservations tab, and the garage's open-spot count on Find drops by one.
 5. **Switch to Parking Services.** Open the Account tab and tap **Switch to Parking Services view**. (Use this instead of reloading, which would reset the demo.)
-6. **See the reservation.** On **Spots**, open the garage and level you booked and find the gold spot. **Today's reservations** on the same screen lists your booking, and the Dashboard activity feed shows it too.
+6. **See the reservation.** On **Spots**, open the garage and level you booked and find the gold spot. **Active and upcoming reservations** on the same screen lists your booking, and the Dashboard activity feed shows it too.
 7. **Check plates.** On **Lookup**, enter `8ABC123` (permit paid) and then `7XYZ889` (permit unpaid, with an open violation). You can also tap the sample plates under the search box.
 8. **Cameras.** On **Cameras**, pick a camera to see the live view with green "empty" and red "car" detection boxes, the detection log, and the camera, vision, database, app pipeline. One camera is shown offline and one degraded.
 9. **Report.** On **Reports**, view the daily report (totals, hourly chart, per-garage table, violations) and try the PDF export, which completes with a demo confirmation.

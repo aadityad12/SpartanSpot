@@ -102,11 +102,11 @@ export function ReservationsCard() {
   return (
     <Card style={styles.card}>
       <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={styles.card}>
-        <SectionHeader title="Today's reservations" />
+        <SectionHeader title="Active and upcoming reservations" />
         {rows.length === 0 ? (
           <EmptyState
             icon="calendar"
-            title="No reservations today"
+            title="No active reservations"
             description="Student bookings that are active or upcoming appear here."
           />
         ) : null}

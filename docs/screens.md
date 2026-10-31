@@ -30,7 +30,7 @@ To open any route directly, use a sign-in deep link, for example `/sign-in?as=st
 | --- | --- | --- |
 | `/admin` | Dashboard: campus totals, per-garage availability, alerts, and a recent activity feed that includes student reservations. | Admin overview, System US01 |
 | `/admin/lookup` | Permit check: enter a license plate (try `8ABC123`, paid, or `7XYZ889`, unpaid) to see permit status, owner, vehicle, reservation, sightings, and violations, and issue a citation. | Admin US01 |
-| `/admin/spots` | Spot map with Hold mode, the holds list (including pre-assigned spots), today's reservations, and the reservation rules that drive the student limits. | Admin US03, reservation rules |
+| `/admin/spots` | Spot map with Hold mode, the holds list (including pre-assigned spots), active and upcoming reservations, and the reservation rules that drive the student limits. | Admin US03, reservation rules |
 | `/admin/cameras` | Camera list and health, a live view with green and red detection boxes, the detection log, and the camera, vision, database, app pipeline. | System US01 (camera and computer-vision layers) |
 | `/admin/reports` | Daily report: totals, hourly chart, per-garage table, violations, and a demo PDF export. | Admin US02 |
 
