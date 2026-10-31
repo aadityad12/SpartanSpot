@@ -11,6 +11,7 @@ import {
   currentReservation,
   nextReservation,
   pluralize,
+  preAssigned,
   splitReserved,
   type HoldReason,
 } from './holds';
@@ -184,7 +185,12 @@ export function SpotMapCard() {
         />
       ) : null}
 
-      <HoldsList spots={heldSpots} holds={adminHolds} onRelease={release} />
+      <HoldsList
+        spots={heldSpots}
+        preAssigned={preAssigned(spots, adminHolds)}
+        holds={adminHolds}
+        onRelease={release}
+      />
     </View>
   );
 }

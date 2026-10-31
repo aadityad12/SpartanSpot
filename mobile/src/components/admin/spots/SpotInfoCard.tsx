@@ -4,7 +4,7 @@ import type { Reservation } from '../../../mock/reservations';
 import { colors } from '../../../theme';
 import { reservationWindow } from '../../reservations/format';
 import { Badge, Card } from '../../kit';
-import { featureLabel } from './holds';
+import { featureLabel, preAssignedReason } from './holds';
 
 const statusBadge = {
   available: { label: 'Available', tone: 'available', icon: 'check-circle' },
@@ -52,7 +52,7 @@ export function SpotInfoCard({
         </View>
       ) : null}
       {!holdReason && !reservation && status === 'reserved' ? (
-        <Text style={styles.body}>Held by Parking Services: pre-assigned reserved spot (sample data).</Text>
+        <Text style={styles.body}>Held by Parking Services: pre-assigned (permanent) for {preAssignedReason(spot)} (sample data).</Text>
       ) : null}
       {status === 'occupied' ? (
         <Text style={styles.body}>A vehicle is parked here right now.</Text>

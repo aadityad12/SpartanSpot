@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CampusMap } from '../../components/CampusMap';
 import { LotCard } from '../../components/LotCard';
 import { Button, Emblem, EmptyState, Icon, IconButton, typography } from '../../components/ui';
+import { useLots } from '../../useLots';
 import { useParking } from '../../store';
 import { colors } from '../../theme';
 
@@ -13,6 +14,7 @@ const filters = ['All parking', 'Available', 'Covered', 'EV charging', 'Accessib
 
 export default function DiscoverScreen() {
   const { feed, loading, error, refresh, stale } = useParking();
+  const allLots = useLots();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('All parking');
   const [view, setView] = useState<'map' | 'list'>('map');
@@ -20,10 +22,10 @@ export default function DiscoverScreen() {
   const [sort, setSort] = useState('Most available');
   const [showSort, setShowSort] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
-  const lots = useMemo(() => feed.lots.filter(lot => `${lot.name} ${lot.subtitle} ${lot.permit}`.toLowerCase().includes(query.toLowerCase()))
+  const lots = useMemo(() => allLots.filter(lot => `${lot.name} ${lot.subtitle} ${lot.permit}`.toLowerCase().includes(query.toLowerCase()))
     .filter(lot => filter === 'All parking' || (filter === 'Available' ? !stale && lot.available > 0 : lot.tags.includes(filter)))
-    .sort((first, second) => sort === 'Closest walk' ? (first.walkMinutes ?? Infinity) - (second.walkMinutes ?? Infinity) : second.available - first.available), [feed, query, filter, sort, stale]);
-  const available = feed.lots.reduce((total, lot) => total + lot.available, 0);
+    .sort((first, second) => sort === 'Closest walk' ? (first.walkMinutes ?? Infinity) - (second.walkMinutes ?? Infinity) : second.available - first.available), [allLots, query, filter, sort, stale]);
+  const available = allLots.reduce((total, lot) => total + lot.available, 0);
   const modeLabel = feed.mode === 'demo' ? 'DEMO EXPERIENCE' : stale ? 'FEED UNAVAILABLE' : 'CAMERA CONNECTED';
 
   return <SafeAreaView edges={['top']} style={styles.screen}>

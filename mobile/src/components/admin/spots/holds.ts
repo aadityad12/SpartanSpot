@@ -27,6 +27,16 @@ export function nextReservation(spot: Spot, reservations: Reservation[], now: nu
     .sort((first, second) => Date.parse(first.start) - Date.parse(second.start))[0];
 }
 
+// Spots that Parking Services reserved permanently in the sample data (not releasable). The reason
+// is a stand-in derived from the spot's features, so the holds list can say why it is set aside.
+export function preAssigned(spots: Spot[], adminHolds: Record<string, string>): Spot[] {
+  return spots.filter(spot => spot.status === 'reserved' && !adminHolds[spot.id]);
+}
+
+export function preAssignedReason(spot: Spot): HoldReason {
+  return spot.features.includes('accessible') ? 'Accessible' : 'Faculty';
+}
+
 export type ReservedSplit = { student: number; held: number };
 
 // Reserved spots come from three places: a student booking, an admin hold, or the sample baseline

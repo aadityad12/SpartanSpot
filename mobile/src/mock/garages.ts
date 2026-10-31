@@ -37,6 +37,17 @@ export type LevelSummary = {
 
 type GarageConfig = Garage & { occupancy: number };
 
+// Lower levels fill first, so the busiest level runs about this many points above the top one.
+// The offsets are symmetric around the garage's target, which keeps the overall average on target.
+const LEVEL_SPREAD = 0.09;
+
+function levelOccupancy(config: GarageConfig, level: number): number {
+  if (config.levels === 1) return config.occupancy;
+  const middle = (config.levels + 1) / 2;
+  const offset = ((middle - level) / (config.levels - 1)) * LEVEL_SPREAD;
+  return Math.min(0.96, Math.max(0.05, config.occupancy + offset));
+}
+
 const configs: GarageConfig[] = [
   {
     id: 'north',
@@ -70,8 +81,8 @@ const configs: GarageConfig[] = [
     permits: ['Student', 'Visitor'],
     amenities: ['Covered', 'EV charging', 'Accessible'],
     cameraMonitored: true,
-    mapX: 73,
-    mapY: 74,
+    mapX: 62,
+    mapY: 72,
     occupancy: 0.68,
   },
   {
@@ -157,11 +168,11 @@ function buildLevel(config: GarageConfig, level: number): Spot[] {
       });
     }
   }
-  // Rank spots by hash and take the first slice, so each level lands on the target occupancy
+  // Rank spots by hash and take the first slice, so each level lands on its target occupancy
   // exactly while the pattern still looks random. Two of the remaining spots are reserved.
   const byRank = (prefix: string) => (first: Spot, second: Spot) =>
     seeded(`${prefix}:${first.id}`) - seeded(`${prefix}:${second.id}`);
-  const occupiedCount = Math.round(spots.length * config.occupancy);
+  const occupiedCount = Math.round(spots.length * levelOccupancy(config, level));
   [...spots].sort(byRank('occupied')).slice(0, occupiedCount).forEach(spot => { spot.status = 'occupied'; });
   spots
     .filter(spot => spot.status === 'available')

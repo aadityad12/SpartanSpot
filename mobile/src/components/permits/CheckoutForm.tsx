@@ -25,7 +25,7 @@ export function CheckoutForm({ plan, onPaid }: { plan: Plan; onPaid: (permit: Pe
   // Fixed at mount so the date chips don't shift while the student is choosing.
   const [openedAt] = useState(() => Date.now());
   const terms = termOptions(plan.id, openedAt);
-  const [term, setTerm] = useState(terms[0].value);
+  const [termValue, setTermValue] = useState(terms[0].value);
   const [methodId, setMethodId] = useState(paymentMethods[0].id);
   // Start with the primary vehicle ticked so the common case is one tap to pay.
   const [selected, setSelected] = useState<string[]>(() => {
@@ -47,7 +47,13 @@ export function CheckoutForm({ plan, onPaid }: { plan: Plan; onPaid: (permit: Pe
 
   const pay = () => {
     if (chosen.length === 0) return;
-    onPaid(purchasePlan(plan.id, chosen.map(vehicle => vehicle.plate)));
+    const term = terms.find(option => option.value === termValue) ?? terms[0];
+    const method = paymentMethods.find(option => option.id === methodId) ?? paymentMethods[0];
+    onPaid(purchasePlan(plan.id, chosen.map(vehicle => vehicle.plate), {
+      validFrom: term.validFrom,
+      validUntil: term.validUntil,
+      method: method.label,
+    }));
   };
 
   return (
@@ -61,7 +67,7 @@ export function CheckoutForm({ plan, onPaid }: { plan: Plan; onPaid: (permit: Pe
 
       <View style={styles.group}>
         <SectionHeader title="Term" />
-        <ChipRow options={terms} value={term} onChange={setTerm} />
+        <ChipRow options={terms} value={termValue} onChange={setTermValue} />
       </View>
 
       <View style={styles.group}>

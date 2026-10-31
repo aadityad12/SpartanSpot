@@ -6,6 +6,7 @@ import { defaultRules, seedReservations, type Reservation, type Rules } from './
 
 export type Role = 'student' | 'admin';
 export type CreateResult = { ok: true; reservation: Reservation } | { ok: false; reason: string };
+export type PurchaseOptions = { validFrom?: string; validUntil?: string; method?: string };
 export type Demo = {
   role: Role | null;
   signIn: (role: Role) => void;
@@ -34,7 +35,9 @@ export type Demo = {
   spotStatus: (spot: Spot) => SpotStatus;
 
   permit: Permit | null;
-  purchasePlan: (planId: Plan['id'], plates: string[]) => Permit;
+  // `options` carry the term and payment method picked at checkout; omitted values fall back to
+  // a permit that starts today, paid with the default card.
+  purchasePlan: (planId: Plan['id'], plates: string[], options?: PurchaseOptions) => Permit;
   payments: Payment[];
   vehicles: Vehicle[];
   addVehicle: (vehicle: Omit<Vehicle, 'id'>) => void;
@@ -177,15 +180,15 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const purchasePlan = useCallback((planId: Plan['id'], plates: string[]) => {
+  const purchasePlan = useCallback((planId: Plan['id'], plates: string[], options: PurchaseOptions = {}) => {
     const plan = plans.find(item => item.id === planId) ?? plans[0];
     const today = new Date();
     const next: Permit = {
       id: `permit-${today.getTime().toString(36)}`,
       planId: plan.id,
       name: `${plan.name} Permit`,
-      validFrom: toDateOnly(today),
-      validUntil: toDateOnly(permitEnd(plan.id, today)),
+      validFrom: options.validFrom ?? toDateOnly(today),
+      validUntil: options.validUntil ?? toDateOnly(permitEnd(plan.id, today)),
       plates,
       status: 'active',
       confirmation: randomCode('PRM', 4),
@@ -197,7 +200,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         date: toDateOnly(today),
         description: next.name,
         amount: plan.price,
-        method: 'Visa •••• 4242',
+        method: options.method ?? 'Visa •••• 4242',
       },
       ...current,
     ]);
