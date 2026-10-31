@@ -1,3 +1,6 @@
+import { garages, garageSummary } from './mock/garages';
+import { colors } from './theme';
+
 export type ParkingLot = {
   id: string;
   name: string;
@@ -20,15 +23,30 @@ export type ParkingFeed = {
   lots: ParkingLot[];
 };
 
+// Derived from the shared garage data so Find-tab counts always match garage details.
+const demoLots: ParkingLot[] = garages.map(garage => {
+  const summary = garageSummary(garage.id);
+  return {
+    id: garage.id,
+    name: garage.name,
+    subtitle: `${garage.shortName.replace(/ Campus$/, '')} campus · ${garage.levels === 1 ? 'Surface lot' : `${garage.levels} levels`}`,
+    available: summary.available,
+    total: summary.total,
+    unknown: 0,
+    walkMinutes: garage.walkMinutes,
+    permit: garage.permits.join(' & '),
+    tags: garage.amenities,
+    mapX: garage.mapX,
+    mapY: garage.mapY,
+    destination: null,
+    updatedAt: null,
+  };
+});
+
 export const demoFeed: ParkingFeed = {
   mode: 'demo',
   updatedAt: null,
-  lots: [
-    { id: 'south', name: 'South Garage', subtitle: 'South campus · 4 levels', available: 142, total: 480, unknown: 0, walkMinutes: 4, permit: 'Student & visitor', tags: ['Covered', 'EV charging', 'Accessible'], mapX: 73, mapY: 74, destination: null, updatedAt: null },
-    { id: 'north', name: 'North Garage', subtitle: 'North campus · 3 levels', available: 68, total: 320, unknown: 0, walkMinutes: 6, permit: 'Student & staff', tags: ['Covered', 'Accessible'], mapX: 64, mapY: 21, destination: null, updatedAt: null },
-    { id: 'west', name: 'West Lot', subtitle: 'West campus · Surface lot', available: 23, total: 110, unknown: 0, walkMinutes: 3, permit: 'Student & visitor', tags: ['EV charging', 'Accessible'], mapX: 19, mapY: 53, destination: null, updatedAt: null },
-    { id: 'east', name: 'East Garage', subtitle: 'East campus · 3 levels', available: 0, total: 240, unknown: 0, walkMinutes: 8, permit: 'Staff only', tags: ['Covered', 'Accessible'], mapX: 88, mapY: 40, destination: null, updatedAt: null },
-  ],
+  lots: demoLots,
 };
 
 function isLot(value: unknown): value is ParkingLot {
@@ -65,8 +83,8 @@ export async function fetchParkingFeed(baseUrl: string): Promise<ParkingFeed> {
 }
 
 export function availability(lot: ParkingLot, stale = false) {
-  if (stale || !lot.total || lot.unknown === lot.total) return { label: 'No current data', color: '#7B8780' };
-  if (lot.available === 0) return { label: lot.unknown ? 'Availability unknown' : 'Full', color: '#B85D4E' };
-  if (lot.available / lot.total < 0.12) return { label: 'Filling up', color: '#AF7625' };
-  return { label: 'Spots available', color: '#245C45' };
+  if (stale || !lot.total || lot.unknown === lot.total) return { label: 'No current data', color: colors.muted };
+  if (lot.available === 0) return { label: lot.unknown ? 'Availability unknown' : 'Full', color: colors.occupied };
+  if (lot.available / lot.total < 0.12) return { label: 'Filling up', color: colors.amber };
+  return { label: 'Spots available', color: colors.available };
 }
