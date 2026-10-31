@@ -1,5 +1,6 @@
 import { garages, garageSummary } from './mock/garages';
 import { colors } from './theme';
+import { parkingLocations, projectCoordinate, type Coordinate } from './maps/geography';
 
 export type ParkingLot = {
   id: string;
@@ -15,6 +16,7 @@ export type ParkingLot = {
   mapY: number;
   destination: string | null;
   updatedAt: string | null;
+  location?: Coordinate | null;
 };
 
 export type ParkingFeed = {
@@ -26,6 +28,7 @@ export type ParkingFeed = {
 // Derived from the shared garage data so Find-tab counts always match garage details.
 const demoLots: ParkingLot[] = garages.map(garage => {
   const summary = garageSummary(garage.id);
+  const point = projectCoordinate(garage.location, parkingLocations[garage.id].area);
   return {
     id: garage.id,
     name: garage.name,
@@ -36,9 +39,10 @@ const demoLots: ParkingLot[] = garages.map(garage => {
     walkMinutes: garage.walkMinutes,
     permit: garage.permits.join(' & '),
     tags: garage.amenities,
-    mapX: garage.mapX,
-    mapY: garage.mapY,
-    destination: null,
+    mapX: point.x * 100,
+    mapY: point.y * 100,
+    destination: `${garage.name}, ${garage.address}, San Jose, CA`,
+    location: garage.location,
     updatedAt: null,
   };
 });
@@ -61,6 +65,9 @@ function isLot(value: unknown): value is ParkingLot {
     && (lot.walkMinutes === null || (Number.isFinite(lot.walkMinutes) && lot.walkMinutes >= 0))
     && Array.isArray(lot.tags) && lot.tags.every(tag => typeof tag === 'string')
     && (lot.destination === null || typeof lot.destination === 'string')
+    && (lot.location == null || (typeof lot.location === 'object'
+      && Number.isFinite(lot.location.latitude) && Math.abs(lot.location.latitude) <= 90
+      && Number.isFinite(lot.location.longitude) && Math.abs(lot.location.longitude) <= 180))
     && (lot.updatedAt === null || (typeof lot.updatedAt === 'string' && Number.isFinite(Date.parse(lot.updatedAt))));
 }
 

@@ -35,7 +35,9 @@
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
     "export:web": "expo export --platform web",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "test:map": "node --test scripts/map.test.mjs",
+    "assets:brand": "node scripts/generate-brand.mjs"
   },
   "private": true
 }

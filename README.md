@@ -33,7 +33,7 @@ Demo state lives in memory, so reloading the page returns to sign-in and resets 
 ## Demo walkthrough
 
 1. **Sign in as a student.** On the sign-in screen choose **Student**.
-2. **See green and red spaces and the available count.** The Find tab shows the total open-spot count and the four garages (North, South, West, and South Campus Lot) on a map. Tap a pin or a garage card to open its details. Use the level chips to see that level's live map: green is available, red is occupied, gold is reserved.
+2. **See green and red spaces and the available count.** The Find tab shows the total open-spot count and the four garages (North, South, West, and South Campus) across Main and South Campus map views. Tap a pin or a garage card to open its details. Use the level chips to see that level's sample spot map: green is available, red is occupied, gold is reserved.
 3. **Reserve a spot.** In the garage details tap **Reserve a spot here**, or use **New** on the Reservations tab. Pick a green spot, choose a start time and length, then pick a vehicle and payment method and confirm. Tapping a red or gold spot shows why it cannot be reserved.
 4. **See the code.** The confirmation shows a reservation code and QR code, and the reservation appears under the Reservations tab, and the garage's open-spot count on Find drops by one.
 5. **Switch to Parking Services.** Open the Account tab and tap **Switch to Parking Services view**. (Use this instead of reloading, which would reset the demo.)
@@ -67,7 +67,7 @@ Every route is listed in [docs/screens.md](docs/screens.md), with the requiremen
 
 **Sample data (the default, and everything outside the Find tab's optional live feed):**
 
-- Garages, levels, spot status, occupancy, and walking times.
+- Spot status, per-level stall layouts and counts, occupancy, and approximate walking times. Garage locations, addresses, and story counts use published SJSU information.
 - Reservations, reservation codes, and fees. Payment is a UI step; no card is charged.
 - Permits, plans, prices, vehicles, payment history, and plate records (the plates in the walkthrough are made up).
 - Camera health, detection boxes and logs, daily reports, trends, forecasts, class schedule, and campus events.
@@ -90,7 +90,7 @@ Reservations, payments, permits, authentication, and push notifications are UI c
 - Persistent preferences and favorites, and a configurable server connection (Account, then Server connection).
 - Camera API polling every 15 seconds when a server is connected, pull-to-refresh, connection errors, and stale-data handling.
 
-The campus map is an illustrative diagram, not a geographic navigation map. Walking times and amenities are examples.
+The campus map uses actual OpenStreetMap streets and building footprints, with a separate view for South Campus at 10th and Alma. Garage pins use geographic coordinates. Interior spot grids remain illustrative, and walking times are approximate estimates to the Student Union. See [map sources and accuracy limits](docs/map-sources.md).
 
 ## Run on a device
 
@@ -138,6 +138,9 @@ Optional environment configuration:
 export PARKING_LOT_NAME='Your monitored garage'
 export PARKING_PERMIT_LABEL='Your actual permit requirements'
 export PARKING_DESTINATION='Your actual garage address or latitude,longitude'
+# Optional: verified physical camera-lot coordinates for map placement.
+export PARKING_LATITUDE='37.333134'
+export PARKING_LONGITUDE='-121.8807383'
 python3 -m app.api --host 0.0.0.0
 ```
 
@@ -148,6 +151,7 @@ python3 -m app.api --host 0.0.0.0
 - Reads the existing `database/parking.db` in SQLite read-only mode, per request.
 - Returns only aggregate parking information; no license plates, vehicle records, permits, or user records leave the API.
 - A detection older than 60 seconds (or the stricter `--max-age`) is unknown, not available. Missing databases return an empty monitored lot; unreadable schemas return HTTP 503.
+- `location` is optional. Configure a verified latitude/longitude pair to place a live lot on a campus map; unlocated lots remain in the list without an invented pin.
 - `total` is the count of stored spot IDs, **not a surveyed garage capacity**. The detector’s current spot IDs are frame-derived, not a calibrated stable-space registry. Treat live counts as experimental until stable bay IDs, camera-to-lot assignment, and capacity calibration are implemented. Old IDs become unknown, not free spaces.
 - Legacy database timestamps have no timezone. The API interprets them in the server’s local timezone; run the API and detector with the same timezone.
 
@@ -157,6 +161,7 @@ python3 -m app.api --host 0.0.0.0
 cd mobile
 npm run typecheck
 npm run lint
+npm run test:map
 npm run export:web
 npm run smoke -- "/sign-in?as=student&next=/ => open spots" "/sign-in?as=admin&next=/admin/cameras => Camera detection"
 ```
@@ -172,7 +177,7 @@ npx eas-cli@latest build --platform android --profile preview
 npx eas-cli@latest build --platform ios --profile preview
 ```
 
-The Android preview profile produces an APK. iOS internal distribution requires Apple signing and registered devices. Production profiles build store packages; store listing, developer accounts, distribution certificates, privacy disclosures, and store submission are separate setup tasks. Replace `com.spartanspot.mobile` with your own identifiers before distribution. Custom store icons and splash branding remain release preparation work.
+The Android preview profile produces an APK. iOS internal distribution requires Apple signing and registered devices. Production profiles build store packages; store listing, developer accounts, distribution certificates, privacy disclosures, and store submission are separate setup tasks. Replace `com.spartanspot.mobile` with your own identifiers before distribution. Spartan Pin launcher icons and splash branding are configured; native builds are required to apply them.
 
 ## Layout
 

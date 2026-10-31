@@ -22,7 +22,7 @@ export function AboutGarage({ garage }: { garage: Garage }) {
         </View>
         <View style={styles.fact}>
           <Icon name="map-pin" size={16} color={colors.primary} />
-          <Text style={styles.factText}>{garage.walkMinutes} min walk to campus</Text>
+          <Text style={styles.factText}>Approx. {garage.walkMinutes} min to Student Union</Text>
         </View>
       </View>
 

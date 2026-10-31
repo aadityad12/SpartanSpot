@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { spartanPinPath } from '../brand';
 import { colors } from '../theme';
 
 export type IconName = React.ComponentProps<typeof Feather>['name'];
@@ -8,7 +9,7 @@ export function Icon({ name, size = 20, color = colors.ink }: { name: IconName; 
   return <Feather name={name} size={size} color={color ?? undefined} />;
 }
 export function Emblem({ size = 30, color = colors.primary }: { size?: number; color?: string }) {
-  return <Svg width={size} height={size} viewBox="0 0 40 40"><Path fill={color} d="M8 17C8 7 16 3 23 4c7 1 12 7 12 14H8Zm2 3h23v5h-6v11h-5V23h-5v13h-5V25H7v-5h3Z" /><Path fill={color} d="m4 15 4-1v5H4zM14 3l3-2 2 5-3 2z" /></Svg>;
+  return <Svg width={size} height={size} viewBox="0 0 100 100" accessibilityLabel="SpartanSpot"><Path fill={color} fillRule="evenodd" d={spartanPinPath} /></Svg>;
 }
 export function IconButton({ name, onPress, label, active, style }: { name: IconName; onPress: () => void; label: string; active?: boolean; style?: StyleProp<ViewStyle> }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [styles.iconButton, active && { backgroundColor: colors.primaryLight }, pressed && { opacity: 0.6 }, style]}><Icon name={name} color={active ? colors.primary : colors.ink} /></Pressable>;

@@ -49,6 +49,16 @@ def parking_feed(database_path, max_age=60):
             occupied += 1
 
     updated_at = latest.isoformat() if latest else None
+    # A camera does not imply a known physical location. Never pin an unconfigured
+    # feed onto the campus diagram; opt in with a verified coordinate pair.
+    location = None
+    try:
+        latitude = float(os.environ['PARKING_LATITUDE'])
+        longitude = float(os.environ['PARKING_LONGITUDE'])
+        if math.isfinite(latitude) and math.isfinite(longitude) and abs(latitude) <= 90 and abs(longitude) <= 180:
+            location = {'latitude': latitude, 'longitude': longitude}
+    except (KeyError, ValueError):
+        pass
     return {
         'mode': 'live',
         'updatedAt': updated_at,
@@ -65,6 +75,7 @@ def parking_feed(database_path, max_age=60):
             'mapX': 65,
             'mapY': 45,
             'destination': os.getenv('PARKING_DESTINATION') or None,
+            'location': location,
             'updatedAt': updated_at,
         }],
     }

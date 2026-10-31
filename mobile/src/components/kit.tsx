@@ -472,6 +472,7 @@ export function SpotGrid({
           ))}
         </View>
       </View>
+      <Text style={styles.legendText}>Sample spaces · layout is illustrative</Text>
       <View style={styles.entrance}>
         <Icon name="arrow-up" size={12} color={colors.primary} />
         <Text style={styles.entranceText}>Entrance</Text>

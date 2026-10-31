@@ -6,6 +6,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.spartanspot.mobile",
@@ -16,14 +17,23 @@
     },
     "android": {
       "package": "com.spartanspot.mobile",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png",
+        "backgroundColor": "#173B58"
+      },
       "predictiveBackGestureEnabled": false
     },
-    "web": { "bundler": "metro" },
+    "web": { "bundler": "metro", "favicon": "./assets/favicon.png" },
     "experiments": { "typedRoutes": true },
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-splash-screen"
+      ["expo-splash-screen", {
+        "image": "./assets/splash-icon.png",
+        "imageWidth": 140,
+        "backgroundColor": "#173B58"
+      }]
     ]
   }
 }

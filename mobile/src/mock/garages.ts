@@ -1,3 +1,5 @@
+import { estimatedWalkMinutes, parkingLocations, type Coordinate } from '../maps/geography';
+
 export type SpotStatus = 'available' | 'occupied' | 'reserved' | 'unknown';
 export type SpotFeature = 'elevator' | 'accessible' | 'ev' | 'compact';
 export type Spot = {
@@ -24,8 +26,7 @@ export type Garage = {
   permits: string[];
   amenities: string[];
   cameraMonitored: boolean;
-  mapX: number;
-  mapY: number;
+  location: Coordinate;
 };
 export type LevelSummary = {
   level: number;
@@ -35,7 +36,7 @@ export type LevelSummary = {
   reserved: number;
 };
 
-type GarageConfig = Garage & { occupancy: number };
+type GarageConfig = Omit<Garage, 'location' | 'walkMinutes'> & { occupancy: number };
 
 // Lower levels fill first, so the busiest level runs about this many points above the top one.
 // The offsets are symmetric around the garage's target, which keeps the overall average on target.
@@ -54,17 +55,14 @@ const configs: GarageConfig[] = [
     name: 'North Garage',
     shortName: 'North',
     address: '65 S 10th St',
-    description: 'Closest to the engineering buildings and the busiest garage at midday.',
-    levels: 4,
+    description: 'Across E. San Fernando Street from the northeast corner of Main Campus. Vehicle entrance on E. San Fernando Street.',
+    levels: 6,
     rows: ['A', 'B', 'C', 'D'],
     spotsPerRow: 12,
-    walkMinutes: 6,
-    hours: 'Open 24/7',
+    hours: '7 AM – midnight; overnight access depends on permit',
     permits: ['Student', 'Employee'],
     amenities: ['Covered', 'Accessible', 'EV charging'],
     cameraMonitored: true,
-    mapX: 64,
-    mapY: 21,
     occupancy: 0.82,
   },
   {
@@ -72,17 +70,14 @@ const configs: GarageConfig[] = [
     name: 'South Garage',
     shortName: 'South',
     address: '377 S 7th St',
-    description: 'Next to the Student Union and the rec center, with the most EV chargers on campus.',
+    description: 'At S. 7th and E. San Salvador Streets on the south edge of Main Campus. Vehicle entrance on S. 7th Street.',
     levels: 5,
     rows: ['A', 'B', 'C', 'D'],
     spotsPerRow: 12,
-    walkMinutes: 4,
-    hours: 'Open 24/7',
+    hours: '7 AM – midnight; overnight access depends on permit',
     permits: ['Student', 'Visitor'],
     amenities: ['Covered', 'EV charging', 'Accessible'],
     cameraMonitored: true,
-    mapX: 62,
-    mapY: 72,
     occupancy: 0.68,
   },
   {
@@ -90,40 +85,38 @@ const configs: GarageConfig[] = [
     name: 'West Garage',
     shortName: 'West',
     address: '350 S 4th St',
-    description: 'A tall garage near the library that fills up early on weekdays.',
-    levels: 6,
+    description: 'At S. 4th and E. San Salvador Streets, at the southwest corner of Main Campus. Entrances on both streets.',
+    levels: 5,
     rows: ['A', 'B', 'C', 'D'],
     spotsPerRow: 12,
-    walkMinutes: 5,
-    hours: 'Open 24/7',
+    hours: '7 AM – midnight; overnight access depends on permit',
     permits: ['Student', 'Employee', 'Visitor'],
     amenities: ['Covered', 'Accessible'],
     cameraMonitored: false,
-    mapX: 19,
-    mapY: 53,
     occupancy: 0.9,
   },
   {
     id: 'south-campus',
-    name: 'South Campus Lot',
+    name: 'South Campus Garage',
     shortName: 'South Campus',
-    address: '1251 S 10th St',
-    description: 'A large surface lot with a shuttle to the main campus and plenty of room all day.',
-    levels: 1,
+    address: '1278 S 10th St',
+    description: 'At S. 10th Street and E. Alma Avenue, eight blocks south of Main Campus. Entrances on 10th and Alma; campus shuttle service runs on a published schedule.',
+    levels: 4,
     rows: ['A', 'B', 'C', 'D', 'E', 'F'],
     spotsPerRow: 15,
-    walkMinutes: 15,
-    hours: '6 AM – 11 PM',
+    hours: '7 AM – 10 PM',
     permits: ['Student', 'Park & Ride'],
-    amenities: ['Accessible'],
+    amenities: ['Covered', 'Accessible'],
     cameraMonitored: false,
-    mapX: 88,
-    mapY: 88,
     occupancy: 0.35,
   },
 ];
 
-export const garages: Garage[] = configs.map(({ occupancy: _occupancy, ...garage }) => garage);
+export const garages: Garage[] = configs.map(({ occupancy: _occupancy, ...garage }) => ({
+  ...garage,
+  location: parkingLocations[garage.id],
+  walkMinutes: estimatedWalkMinutes(parkingLocations[garage.id]),
+}));
 
 export function getGarage(id: string): Garage | undefined {
   return garages.find(garage => garage.id === id);
@@ -142,11 +135,11 @@ function seeded(key: string): number {
   return (hash >>> 0) / 4294967296;
 }
 
-function featuresFor(garage: Garage, row: string, number: number): SpotFeature[] {
+function featuresFor(garage: GarageConfig, row: string, number: number): SpotFeature[] {
   const features: SpotFeature[] = [];
   if (number <= 2) features.push('elevator');
   if (row === 'A' && number <= 2) features.push('accessible');
-  if (row === 'D' && number >= 11 && number <= 12) features.push('ev');
+  if (garage.amenities.includes('EV charging') && row === 'D' && number >= 11 && number <= 12) features.push('ev');
   if (row === garage.rows[garage.rows.length - 1] && number >= 5 && number <= 6) features.push('compact');
   return features;
 }

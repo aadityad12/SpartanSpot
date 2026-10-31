@@ -96,7 +96,7 @@ export default function LotScreen() {
         />
 
         <Card style={styles.mapCard}>
-          <SectionHeader title={`Level ${level} live map`} />
+          <SectionHeader title={`Level ${level} spot map`} />
           <SpotGrid
             spots={levelSpots}
             statusOf={spotStatus}
