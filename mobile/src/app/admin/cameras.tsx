@@ -8,9 +8,12 @@ import { PipelineCard } from '../../components/admin/cameras/PipelineCard';
 import { AdminHeader, Screen } from '../../components/kit';
 import { cameras, getCamera } from '../../mock/cameras';
 
+// South L1 has the most open stalls, so the first view shows both green and red boxes.
+const defaultCameraId = 'S-L1-01';
+
 export default function AdminCamerasScreen() {
   const { width } = useWindowDimensions();
-  const [selectedId, setSelectedId] = useState(cameras[0].id);
+  const [selectedId, setSelectedId] = useState(defaultCameraId);
   const camera = getCamera(selectedId) ?? cameras[0];
   const wide = width >= 900;
 

@@ -73,10 +73,7 @@ export function DetectionBox({
   if (status === 'unknown') return null;
   const color = boxColor[status];
   const { box } = stall;
-  const x = box.x + 3;
-  const y = box.y + 2;
-  const width = box.width - 6;
-  const height = box.height - 4;
+  const { x, y, width, height } = box;
   const text = status === 'reserved' ? tagWord[status] : `${tagWord[status]} ${confidence.toFixed(2)}`;
   const tagWidth = text.length * 4.7 + 6;
   const tagX = Math.max(1, Math.min(x + width / 2 - tagWidth / 2, 639 - tagWidth));

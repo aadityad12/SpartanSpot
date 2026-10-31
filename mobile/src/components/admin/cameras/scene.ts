@@ -31,7 +31,7 @@ export type Stall = {
   row: RowSpec;
   // Trapezoid corners, clockwise from the top left.
   corners: [number, number][];
-  // Axis-aligned bounds, like a detector would report.
+  // Axis-aligned bounding box, like a detector would report.
   box: { x: number; y: number; width: number; height: number };
   // Horizontal extent of the stall at its vertical middle, for sizing the car.
   mid: { x: number; width: number };
@@ -50,16 +50,18 @@ function buildStall(spot: Spot, row: RowSpec, index: number): Stall {
     [xAt(u1, row.bottom), row.bottom],
     [xAt(u0, row.bottom), row.bottom],
   ];
-  const xs = corners.map(point => point[0]);
-  const left = Math.min(...xs);
-  const right = Math.max(...xs);
   const midY = (row.top + row.bottom) / 2;
+  const span = row.bottom - row.top;
+  const midX = (xAt(u0, midY) + xAt(u1, midY)) / 2;
+  const midWidth = xAt(u1, midY) - xAt(u0, midY);
+  // Slightly wider than a car, narrower than the stall, so neighbouring boxes never touch.
+  const boxWidth = midWidth * 0.86;
   return {
     spot,
     row,
     corners,
-    box: { x: left, y: row.top, width: right - left, height: row.bottom - row.top },
-    mid: { x: (xAt(u0, midY) + xAt(u1, midY)) / 2, width: xAt(u1, midY) - xAt(u0, midY) },
+    box: { x: midX - boxWidth / 2, y: row.top + span * 0.06, width: boxWidth, height: span * 0.88 },
+    mid: { x: midX, width: midWidth },
   };
 }
 
