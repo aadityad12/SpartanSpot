@@ -60,7 +60,7 @@ export const seedReservations: Reservation[] = [
     start: new Date(now - 30 * 60 * 1000).toISOString(),
     end: new Date(now + 90 * 60 * 1000).toISOString(),
     status: 'active',
-    fee: 4,
+    fee: 3,
     createdAt: new Date(now - 2 * HOUR).toISOString(),
   },
   {
@@ -73,7 +73,7 @@ export const seedReservations: Reservation[] = [
     start: new Date(upcomingStart).toISOString(),
     end: new Date(upcomingStart + 3 * HOUR).toISOString(),
     status: 'upcoming',
-    fee: 4,
+    fee: 3,
     createdAt: new Date(now - 5 * HOUR).toISOString(),
   },
   {
