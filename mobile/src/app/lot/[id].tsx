@@ -1,51 +1,137 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { Linking, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { CampusMap } from '../../components/CampusMap';
-import { Button, EmptyState, Icon, IconButton, typography } from '../../components/ui';
-import { availability } from '../../data';
+import { useMemo, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { AboutGarage } from '../../components/garage/AboutGarage';
+import { GarageHeader } from '../../components/garage/GarageHeader';
+import { GarageTotals } from '../../components/garage/GarageTotals';
+import { LevelBreakdown } from '../../components/garage/LevelBreakdown';
+import { ParkedHereCard } from '../../components/garage/ParkedHereCard';
+import { ReserveFooter, reserveFooterHeight } from '../../components/garage/ReserveFooter';
+import { SpotDetailCard } from '../../components/garage/SpotDetailCard';
+import { Card, ChipRow, Screen, SectionHeader, SpotGrid, SpotLegend } from '../../components/kit';
+import { Button, EmptyState, IconButton } from '../../components/ui';
+import { useDemo } from '../../demo';
+import { garageSummary, getGarage, getSpots, type Spot } from '../../mock/garages';
 import { useParking } from '../../store';
-import { colors } from '../../theme';
+
+function close() {
+  if (router.canGoBack()) router.back();
+  else router.replace('/');
+}
 
 export default function LotScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { feed, favorites, toggleFavorite, park, stale, session } = useParking();
-  const [note, setNote] = useState('');
-  const [message, setMessage] = useState('');
-  const lot = feed.lots.find(item => item.id === id);
-  const close = () => { if (router.canGoBack()) router.back(); else router.replace('/'); };
-  if (!lot) return <SafeAreaView style={styles.screen}><View style={styles.content}><IconButton name="arrow-left" label="Go back" onPress={close} /><EmptyState icon="map-pin" title="This lot isn’t in the current feed" description="Return to parking to find an available location." /></View></SafeAreaView>;
-  const status = availability(lot, stale);
-  const saveSession = () => {
-    park({ lotId: lot.id, lotName: lot.name, startedAt: new Date().toISOString(), note: note.trim(), demo: feed.mode === 'demo' });
+  const { favorites, toggleFavorite, park, session } = useParking();
+  const { spotStatus, adminHolds } = useDemo();
+  const [pickedLevel, setPickedLevel] = useState<number | null>(null);
+  const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null);
+
+  const garage = getGarage(id);
+  const summary = useMemo(() => garageSummary(id, spotStatus), [id, spotStatus]);
+
+  // Default to the level with the most open spaces; ties go to the lower level.
+  const bestLevel = useMemo(
+    () => summary.byLevel.reduce((best, item) => (item.available > best.available ? item : best), summary.byLevel[0])?.level ?? 1,
+    [summary],
+  );
+  const level = pickedLevel ?? bestLevel;
+  const levelSpots = useMemo(() => getSpots(id, level), [id, level]);
+
+  if (!garage) {
+    return (
+      <Screen>
+        <IconButton name="arrow-left" label="Go back" onPress={close} />
+        <EmptyState
+          icon="map-pin"
+          title="Garage not found"
+          description="That garage isn't in the sample data. Return to Find parking to pick one."
+        />
+        <Button title="Back to Find parking" icon="search" onPress={() => router.replace('/')} />
+      </Screen>
+    );
+  }
+
+  const selectLevel = (next: number) => {
+    setPickedLevel(next);
+    setSelectedSpot(null);
+  };
+
+  const reserve = (spot?: Spot) => {
+    router.push({
+      pathname: '/reserve/[lotId]',
+      params: spot ? { lotId: garage.id, spot: spot.id } : { lotId: garage.id },
+    });
+  };
+
+  const parked = (note: string) => {
+    park({
+      lotId: garage.id,
+      lotName: garage.name,
+      startedAt: new Date().toISOString(),
+      note,
+      demo: true,
+    });
     router.replace('/activity');
   };
-  const directions = async () => {
-    if (!lot.destination) return;
-    try {
-      await Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(lot.destination)}`);
-    } catch {
-      setMessage('Could not open your map app. Please try again.');
-    }
-  };
-  return <SafeAreaView style={styles.screen}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}><View style={styles.header}><IconButton name="arrow-left" label="Go back" onPress={close} /><Text style={typography.eyebrow}>A PLACE TO LAND</Text><IconButton name="bookmark" label={favorites.includes(lot.id) ? 'Unsave lot' : 'Save lot'} active={favorites.includes(lot.id)} onPress={() => toggleFavorite(lot.id)} /></View><Text style={[typography.title, { marginTop: 25 }]}>{lot.name}</Text><Text style={[typography.subtitle, { marginTop: 7, marginBottom: 24 }]}>{lot.subtitle}</Text><CampusMap lots={[lot]} selected={lot.id} onSelect={() => {}} stale={stale} /><View style={styles.stats}><View><Text style={[styles.count, { color: status.color }]}>{stale ? '—' : lot.available}<Text style={styles.ofTotal}> / {lot.total}</Text></Text><Text style={typography.subtitle}>{status.label}</Text></View><View style={styles.walk}><Icon name="map-pin" color={colors.primary} /><Text style={styles.walkText}>{lot.walkMinutes === null ? 'Camera monitored' : `${lot.walkMinutes} min walk`}</Text></View></View><View style={styles.tags}>{lot.tags.map(tag => <View key={tag} style={styles.tag}><Icon name={tag === 'EV charging' ? 'zap' : tag === 'Covered' ? 'home' : 'check-circle'} color={colors.primary} size={13} /><Text style={styles.tagText}>{tag}</Text></View>)}</View><View style={styles.info}><Icon name="credit-card" color={colors.primary} /><View style={{ flex: 1 }}><Text style={styles.infoTitle}>{lot.permit}</Text><Text style={styles.infoText}>A valid campus permit may be required. Always check posted signs for parking rules and rates.</Text></View></View>{lot.destination && <Button title="Get directions" icon="navigation" onPress={() => void directions()} />}{!lot.destination && <Text style={styles.infoText}>{feed.mode === 'demo' ? 'Demo location. Counts, walking times, and the campus diagram are illustrative, not real parking guidance.' : 'Configure PARKING_DESTINATION on the server to enable directions. The campus diagram is illustrative.'}</Text>}<View style={styles.reminder}><Text style={typography.section}>Make it easy to find your way back.</Text><Text style={typography.subtitle}>Add a level or space number. We’ll keep it on this device.</Text><TextInput accessibilityLabel="Parking level or space number" placeholder="e.g. Level 2, space B24" placeholderTextColor={colors.muted} value={note} maxLength={120} onChangeText={setNote} style={styles.input} /><Button title={session ? 'Replace my parking reminder' : 'I parked here'} icon="check-circle" onPress={saveSession} /><Text style={styles.infoText}>{session ? `This replaces your reminder for ${session.lotName}. ` : ''}This does not reserve a space or pay for parking.</Text></View>{message && <Text accessibilityLiveRegion="polite" style={styles.infoText}>{message}</Text>}</ScrollView></SafeAreaView>;
+
+  return (
+    <View style={styles.root}>
+      <Screen>
+        <GarageHeader
+          garage={garage}
+          saved={favorites.includes(garage.id)}
+          onBack={close}
+          onToggleSaved={() => toggleFavorite(garage.id)}
+        />
+
+        <GarageTotals totals={summary} />
+
+        <ChipRow
+          options={summary.byLevel.map(item => ({
+            value: String(item.level),
+            label: `L${item.level} · ${item.available} open`,
+          }))}
+          value={String(level)}
+          onChange={value => selectLevel(Number(value))}
+        />
+
+        <Card style={styles.mapCard}>
+          <SectionHeader title={`Level ${level} live map`} />
+          <SpotGrid
+            spots={levelSpots}
+            statusOf={spotStatus}
+            selectedId={selectedSpot?.id}
+            onPressSpot={setSelectedSpot}
+          />
+          <SpotLegend />
+        </Card>
+
+        {selectedSpot ? (
+          <SpotDetailCard
+            garage={garage}
+            spot={selectedSpot}
+            status={spotStatus(selectedSpot)}
+            holdReason={adminHolds[selectedSpot.id]}
+            onReserve={() => reserve(selectedSpot)}
+          />
+        ) : null}
+
+        <SectionHeader title="Levels" />
+        <LevelBreakdown levels={summary.byLevel} selected={level} onSelect={selectLevel} />
+
+        <SectionHeader title="About this garage" />
+        <AboutGarage garage={garage} />
+
+        <ParkedHereCard replacesLotName={session?.lotName} onParked={parked} />
+
+        <View style={{ height: reserveFooterHeight - 32 }} />
+      </Screen>
+      <ReserveFooter onPress={() => reserve()} />
+    </View>
+  );
 }
+
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.background },
-  content: { padding: 24, maxWidth: 560, width: '100%', alignSelf: 'center', paddingBottom: 36 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  stats: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 24 },
-  count: { fontSize: 43, fontWeight: '700', letterSpacing: -1.5 },
-  ofTotal: { color: colors.muted, fontSize: 18, fontWeight: '400' },
-  walk: { flexDirection: 'row', gap: 7, alignItems: 'center' },
-  walkText: { color: colors.primary, fontWeight: '600', fontSize: 12 },
-  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 9, marginBottom: 22 },
-  tag: { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 10, backgroundColor: colors.primaryLight, borderRadius: 10 },
-  tagText: { color: colors.primary, fontSize: 10 },
-  info: { flexDirection: 'row', gap: 12, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 20, marginBottom: 20 },
-  infoTitle: { fontSize: 14, fontWeight: '700', color: colors.ink, marginBottom: 6 },
-  infoText: { fontSize: 11, lineHeight: 18, color: colors.muted, marginVertical: 8 },
-  reminder: { marginTop: 24, gap: 13 },
-  input: { padding: 16, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.white, borderRadius: 13, fontSize: 14, color: colors.ink },
+  root: { flex: 1 },
+  mapCard: { gap: 12 },
 });
