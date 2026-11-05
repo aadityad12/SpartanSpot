@@ -1,149 +1,245 @@
+"""Run the SpartanSpot camera application.
+
+This file coordinates the smaller modules:
+
+    Camera -> Detector -> Tracker -> Parking service -> Display
+
+Parking images, plate recognition, and database operations are handled
+by their respective modules.
+"""
+
 import time
+
 import cv2 as cv
+from ultralytics import YOLO
 
-from app.camera import Camera
 from app.config import (
-    MODEL_PATH,
-    DATABASE_PATH,
+    CALIBRATION_MATCH_DISTANCE,
+    CALIBRATION_SECONDS,
+    CAMERA_ID,
     CAMERA_INDEX,
-    CONFIDENCE_THRESHOLD,
-    IMAGE_SIZE,
+    DATABASE_PATH,
+    DETECTION_INTERVAL_SECONDS,
+    EXPECTED_SPACE_COUNT,
+    FRAME_HEIGHT,
+    FRAME_WIDTH,
+    MAX_PLATE_ATTEMPTS,
+    MODEL_PATH,
+    OCCUPANCY_DELAY_SECONDS,
+    PLATE_API_TOKEN_ENV,
+    PLATE_REGION,
+    PLATE_RETRY_SECONDS,
+    SLOT_DISCONNECTED_SECONDS,
+    SNAPSHOT_INTERVAL_SECONDS,
+    SPACE_IDS,
+    STATUS_CONFIRMATION_SECONDS,
     WINDOW_NAME,
-    DATABASE_UPDATE_INTERVAL,
-    DETECTION_INTERVAL,
-    LICENSE_PLATE_MODEL_PATH,
-    PLATE_CONFIDENCE_THRESHOLD,
-    TARGET_WIDTH,
-    TARGET_HEIGHT
-)
-from app.license_plate_detector import (
-    LicensePlateDetector
 )
 
+from app.database.database import ParkingDatabase
 
-from app.database import ParkingDatabase
-from app.detector import ParkingDetector
-from app.parking_logic import summarize_detections
-from app.visualization import (
-    draw_all_detections,
-    draw_dashboard,
-    draw_license_plates
+from app.parking.camera import Camera
+from app.parking.detector import run_model
+from app.parking.occupancy_service import (
+    record_occupancy_snapshot,
 )
-from app.database_updater import DatabaseUpdater
+from app.parking.parking_service import (
+    process_plate_scans,
+    process_status_events,
+)
+from app.parking.tracker import ParkingTracker
+from app.parking.visualization import (
+    draw_parking_status,
+)
 
+from app.plates.plate_api import PlateApiReader
+
+from app.parking.status_store import publish_status
 
 def main():
-    detector = ParkingDetector(
-        model_path=MODEL_PATH,
-        confidence_threshold=CONFIDENCE_THRESHOLD,
-        image_size=IMAGE_SIZE
-    )
+    """Initialize resources and run the camera loop."""
 
-    plate_detector = LicensePlateDetector(
-        model_path=LICENSE_PLATE_MODEL_PATH,
-        confidence_threshold=PLATE_CONFIDENCE_THRESHOLD,
-        image_size=IMAGE_SIZE
-    )
-
-    camera = Camera(CAMERA_INDEX)
-    database = ParkingDatabase(DATABASE_PATH)
-
-    database_updater = DatabaseUpdater(
-        database=database,
-        update_interval=DATABASE_UPDATE_INTERVAL
-    )
-    # Create a resizable window
-    cv.namedWindow(
-        WINDOW_NAME,
-        cv.WINDOW_NORMAL
-    )
-
-    cv.resizeWindow(
-        WINDOW_NAME,
-        TARGET_WIDTH,
-        TARGET_HEIGHT
-    )
-
-    last_detection_time = 0
-    last_detections = []
-    last_plate_detections = []
+    # These start as None so cleanup also works if initialization fails.
+    database = None
+    camera = None
 
     try:
-        while True:
-            frame = camera.read()
+        model = YOLO(
+            str(MODEL_PATH)
+        )
 
-            if frame is None:
-                print("Could not read camera frame.")
+        print(
+            "Loaded model classes:",
+            model.names,
+        )
+
+        database = ParkingDatabase(
+            DATABASE_PATH
+        )
+
+        api_reader = PlateApiReader(
+            token_env=PLATE_API_TOKEN_ENV,
+            region=PLATE_REGION,
+        )
+
+        tracker = ParkingTracker(
+            spot_ids=SPACE_IDS,
+            calibration_seconds=CALIBRATION_SECONDS,
+            match_distance=CALIBRATION_MATCH_DISTANCE,
+            status_confirmation_seconds=(
+                STATUS_CONFIRMATION_SECONDS
+            ),
+            disconnected_seconds=(
+                SLOT_DISCONNECTED_SECONDS
+            ),
+            occupancy_delay_seconds=(
+                OCCUPANCY_DELAY_SECONDS
+            ),
+            retry_seconds=PLATE_RETRY_SECONDS,
+            max_attempts=MAX_PLATE_ATTEMPTS,
+        )
+
+        camera = Camera(
+            camera_index=CAMERA_INDEX,
+            width=FRAME_WIDTH,
+            height=FRAME_HEIGHT,
+        )
+
+        # monotonic() measures elapsed time reliably.
+        # It is separate from the calendar timestamps stored in SQLite.
+        last_detection_at = (
+            time.monotonic()
+            - DETECTION_INTERVAL_SECONDS
+        )
+
+        last_snapshot_at = time.monotonic()
+
+        latest_plates = []
+        reserved_spot_ids = set()
+
+        print(
+            "Camera running. Press Q in the camera window to exit."
+        )
+
+        while True:
+            success, frame = camera.read()
+
+            if not success:
+                print("Camera frame unavailable.")
                 break
 
-            frame = cv.resize(
-                frame,
-                (TARGET_WIDTH, TARGET_HEIGHT),
-                interpolation=cv.INTER_AREA
-            )
+            now = time.monotonic()
 
-            current_time = time.monotonic()
-
-            # Run both models once per second
             if (
-                current_time - last_detection_time
-                >= DETECTION_INTERVAL
+                now - last_detection_at
+                >= DETECTION_INTERVAL_SECONDS
             ):
-                last_detections = detector.detect(frame)
-
-                if last_detections is None:
-                    last_detections = []
-
-                last_plate_detections = plate_detector.detect(frame)
-
-                if last_plate_detections is None:
-                    last_plate_detections = []
-
-                last_detection_time = current_time
-
-                print(
-                    "Parking and license-plate "
-                    "detection updated."
+                # The detector reads the original frame.
+                # Drawing happens later on a separate display copy.
+                parking_detections, latest_plates = run_model(
+                    model,
+                    frame,
                 )
 
-            detections = last_detections
+                events = tracker.observe(
+                    parking_detections,
+                    now,
+                )
 
-            summary = summarize_detections(
-                detections
-            )
+                process_status_events(
+                    events=events,
+                    tracker=tracker,
+                    database=database,
+                    camera_id=CAMERA_ID,
+                )
 
-            draw_all_detections(
-                frame,
-                detections
-            )
+                # The tracker stores the latest bounding box for each ID.
+                # Build the dictionary expected by the plate service.
+                slot_boxes = {}
 
-            draw_license_plates(
-                frame,
-                last_plate_detections
-            )
+                for spot_id, slot in tracker.slots.items():
+                    if slot.bbox is None:
+                        continue
 
-            draw_dashboard(
-                frame,
-                summary
-            )
+                    slot_boxes[spot_id] = {
+                        "x1": slot.bbox[0],
+                        "y1": slot.bbox[1],
+                        "x2": slot.bbox[2],
+                        "y2": slot.bbox[3],
+                    }
 
-            database_updater.update_if_needed(
-                detections
+                # The tracker requests scans only after the occupancy
+                # delay and when another attempt is allowed.
+                process_plate_scans(
+                    events=events,
+                    frame=frame,
+                    slot_boxes=slot_boxes,
+                    plate_detections=latest_plates,
+                    tracker=tracker,
+                    database=database,
+                    api_reader=api_reader,
+                    now=now,
+                )
+
+                # Refresh after scanning because a successful arrival
+                # may have fulfilled a reservation.
+                reserved_spot_ids = (
+                    database.get_reserved_spot_ids()
+                )
+
+                # Publish current availability for the backend API.
+                publish_status(
+                    tracker=tracker,
+                    reserved_spot_ids=reserved_spot_ids,
+                )
+
+                last_detection_at = now
+
+            # Refresh the clock because an API request may take time.
+            now = time.monotonic()
+
+            if (
+                tracker.calibrated
+                and now - last_snapshot_at
+                >= SNAPSHOT_INTERVAL_SECONDS
+            ):
+                record_occupancy_snapshot(
+                    tracker=tracker,
+                    database=database,
+                    camera_id=CAMERA_ID,
+                    total_spaces=EXPECTED_SPACE_COUNT,
+                    reserved_spot_ids=reserved_spot_ids,
+                )
+
+                last_snapshot_at = now
+
+            display = draw_parking_status(
+                frame=frame,
+                tracker=tracker,
+                plate_detections=latest_plates,
+                reserved_spot_ids=reserved_spot_ids,
             )
 
             cv.imshow(
                 WINDOW_NAME,
-                frame
+                display,
             )
 
-            # Press q to quit
             if cv.waitKey(1) & 0xFF == ord("q"):
                 break
 
     finally:
-        camera.release()
-        database.close()
-        cv.destroyAllWindows()
+        # Release resources even if initialization or processing fails.
+        try:
+            if camera is not None:
+                camera.release()
+        finally:
+            try:
+                if database is not None:
+                    database.close()
+            finally:
+                cv.destroyAllWindows()
+
 
 if __name__ == "__main__":
     main()
