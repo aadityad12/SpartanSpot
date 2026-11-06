@@ -1,1 +1,1 @@
-{"camera_id": "camera_1", "updated_at": 1793914378.8710291, "spaces": [{"spot_id": "A1", "status": "disconnected"}, {"spot_id": "A2", "status": "disconnected"}, {"spot_id": "A3", "status": "disconnected"}, {"spot_id": "A4", "status": "disconnected"}]}
+{"camera_id": "camera_1", "updated_at": 1793924900.849741, "spaces": [{"spot_id": "A1", "status": "occupied"}, {"spot_id": "A2", "status": "occupied"}, {"spot_id": "A3", "status": "occupied"}, {"spot_id": "A4", "status": "occupied"}]}

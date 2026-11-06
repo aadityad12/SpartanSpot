@@ -2,10 +2,11 @@
 
 from fastapi import FastAPI, Response
 
-from app.parking.status_store import read_status
+from app.parking.status_store import mobile_feed
 
 from app.api.auth_routes import router as auth_router
 
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title="SpartanSpot API",
@@ -14,6 +15,14 @@ app = FastAPI(
 )
 
 app.include_router(auth_router)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Development only
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/api/health")
@@ -27,25 +36,9 @@ def health():
 
 @app.get("/api/spaces")
 def get_spaces(response: Response):
-    """Return the latest parking status and aggregate counts."""
+    """Return the mobile parking-feed contract from the camera status file."""
 
     # Ask browsers to fetch fresh availability for each request.
     response.headers["Cache-Control"] = "no-store"
 
-    payload = read_status()
-
-    counts = {
-        "available": 0,
-        "occupied": 0,
-        "reserved": 0,
-        "disconnected": 0,
-    }
-
-    for space in payload["spaces"]:
-        counts[space["status"]] += 1
-
-    return {
-        **payload,
-        "total_spaces": len(payload["spaces"]),
-        "counts": counts,
-    }
+    return mobile_feed()

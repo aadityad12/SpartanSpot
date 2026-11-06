@@ -75,7 +75,7 @@ export async function fetchParkingFeed(baseUrl: string): Promise<ParkingFeed> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
-    const response = await fetch(`${baseUrl.replace(/\/$/, '')}/api/lots`, { signal: controller.signal });
+    const response = await fetch(`${baseUrl.replace(/\/$/, '')}/api/spaces`, { signal: controller.signal });
     if (!response.ok) throw new Error(`Parking server returned ${response.status}`);
     const feed = await response.json();
     if (feed.mode !== 'live' || !Array.isArray(feed.lots) || !feed.lots.every(isLot)

@@ -10,6 +10,7 @@ import json
 import os
 import tempfile
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 from app.config import (
@@ -26,6 +27,22 @@ STATUS_FILE = (
 # If the camera stops publishing, its last status becomes untrustworthy.
 # A slow synchronous plate API request may also trigger this timeout.
 STATUS_TIMEOUT_SECONDS = 10.0
+
+
+def disconnected_status():
+    """Return a safe response when the camera has not published recently."""
+
+    # Keep this fallback centralized so every API entry point cannot expose
+    # stale availability as if it were current.
+    return {
+        "camera_id": CAMERA_ID,
+        "camera_online": False,
+        "updated_at": None,
+        "spaces": [
+            {"spot_id": spot_id, "status": "disconnected"}
+            for spot_id in SPACE_IDS
+        ],
+    }
 
 
 def publish_status(
@@ -165,15 +182,41 @@ def read_status():
         TypeError,
     ):
         # Never show old availability as if it were current.
-        return {
-            "camera_id": CAMERA_ID,
-            "camera_online": False,
-            "updated_at": None,
-            "spaces": [
-                {
-                    "spot_id": spot_id,
-                    "status": "disconnected",
-                }
-                for spot_id in SPACE_IDS
-            ],
-        }
+        return disconnected_status()
+
+
+def mobile_feed():
+    """Convert internal camera status into the mobile app's public contract."""
+
+    payload = read_status()
+    counts = {"available": 0, "occupied": 0, "reserved": 0, "disconnected": 0}
+    for space in payload["spaces"]:
+        counts[space["status"]] += 1
+
+    updated_at = payload["updated_at"]
+    # JavaScript Date.parse requires an ISO string; the status file uses Unix
+    # seconds so the camera and API can write/read it without timezone issues.
+    updated_at_iso = (
+        datetime.fromtimestamp(updated_at, tz=timezone.utc).isoformat()
+        if updated_at is not None else None
+    )
+    return {
+        "mode": "live",
+        "updatedAt": updated_at_iso,
+        "lots": [{
+            "id": payload["camera_id"],
+            "name": "Camera-monitored lot",
+            "subtitle": "Live camera detections · Counts are estimates",
+            "available": counts["available"],
+            "total": len(payload["spaces"]),
+            "unknown": counts["disconnected"],
+            "walkMinutes": None,
+            "permit": "Check posted permit requirements",
+            "tags": [],
+            "mapX": 65,
+            "mapY": 45,
+            "destination": None,
+            "location": None,
+            "updatedAt": updated_at_iso,
+        }],
+    }

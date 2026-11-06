@@ -10,6 +10,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from app.config import DATABASE_PATH
+from app.parking.status_store import mobile_feed
 
 
 def observation_time(value):
@@ -21,6 +22,12 @@ def observation_time(value):
 
 
 def parking_feed(database_path, max_age=60):
+    # Preserve this legacy entry point, but use the same live-status contract
+    # as FastAPI; the old database schema caused mobile connection failures.
+    return mobile_feed()
+
+
+def _old_database_parking_feed(database_path, max_age=60):
     now = datetime.now(timezone.utc)
     rows = []
     database_path = Path(database_path).resolve()
@@ -100,7 +107,7 @@ def create_handler(database_path, max_age=60, cors_origin=None):
             path = urlsplit(self.path).path
             if path == '/api/health':
                 self.send_json(200, {'status': 'ok'})
-            elif path == '/api/lots':
+            elif path in ('/api/lots', '/api/spaces'):
                 try:
                     self.send_json(200, parking_feed(database_path, max_age))
                 except (sqlite3.Error, OSError):
